@@ -36,7 +36,6 @@ typedef struct {
 
 // Function to read input files
 void read_input_files(const char *input_filename, char ***file_list, int *total_files) {
-    // printf("Reading input files from: %s\n", input_filename);
     FILE *fp = fopen(input_filename, "r");
     if (!fp) {
         perror("Failed to open input file");
@@ -44,21 +43,17 @@ void read_input_files(const char *input_filename, char ***file_list, int *total_
     }
 
     fscanf(fp, "%d", total_files); // Update total_files
-    // printf("Total files to process: %d\n", *total_files);
     *file_list = (char **)malloc(*total_files * sizeof(char *)); // Allocate memory for file_list
     for (int i = 0; i < *total_files; i++) {
         (*file_list)[i] = (char *)malloc(FILE_NAME_SIZE * sizeof(char)); // Allocate memory for each file name
         fscanf(fp, "%s", (*file_list)[i]);
-        // printf("File %d: %s\n", i + 1, (*file_list)[i]);
     }
 
     fclose(fp);
-    // printf("Finished reading input files.\n");
 }
 
 void *mapper_thread(void *arg) {
     mapper_args_t *args = (mapper_args_t *)arg;
-    // printf("Mapper %d: Started\n", args->mapper_id);
     char **file_list = args->file_list;
     int total_files = args->total_files;
     int *current_file_index = args->current_file_index;
@@ -81,14 +76,11 @@ void *mapper_thread(void *arg) {
         pthread_mutex_lock(mutex);
         if (*current_file_index >= total_files) {
             pthread_mutex_unlock(mutex);
-            // printf("Mapper %d: No more files to process. Exiting loop.\n", mapper_id);
             break; // No more files to process
         }
         file_index = *current_file_index;
         (*current_file_index)++;
         pthread_mutex_unlock(mutex);
-
-        // printf("Mapper %d: Processing file %s\n", mapper_id, file_list[file_index]);
 
         // Process the file
         char *file_name = file_list[file_index];
@@ -173,15 +165,12 @@ void *mapper_thread(void *arg) {
             args->partial_result_size++;
         }
 
-        // printf("Mapper %d: Finished processing file %s. Unique words found: %d\n", mapper_id, file_name, unique_words_size);
 
         // Free unique_words array (but not the strings themselves, as they are now in partial_results)
         free(unique_words);
     } // End of while(1)
 
-    // printf("Mapper %d: Reaching barrier\n", mapper_id);
     pthread_barrier_wait(args->barrier);
-    // printf("Mapper %d: Exiting\n", mapper_id);
 
     pthread_exit(NULL);
 }
@@ -222,11 +211,9 @@ void *reducer_thread(void *arg) {
     int mapper_count = args->mapper_count;
     pthread_barrier_t *barrier = args->barrier;
 
-    // printf("Reducer %d: Started\n", reducer_id);
 
     // Wait at the barrier until all Mappers are done
     pthread_barrier_wait(barrier);
-    // printf("Reducer %d: Passed barrier\n", reducer_id);
 
     // Initialize an array of word_entry_t
     int word_entries_size = 0;
@@ -369,7 +356,6 @@ void *reducer_thread(void *arg) {
     }
     free(word_entries);
 
-    // printf("Reducer %d: Exiting\n", reducer_id);
     pthread_exit(NULL);
 }
 
@@ -379,7 +365,6 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    // printf("Starting program with %s mappers, %s reducers, and input file: %s\n", argv[1], argv[2], argv[3]);
 
     char **file_list; // Pointer to hold list of file names
     int total_files;  // Variable to hold total number of files
@@ -422,7 +407,6 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "Failed to create Mapper thread %d\n", i);
             exit(EXIT_FAILURE);
         }
-        // printf("Mapper thread %d created\n", i);
     }
 
     // Create Reducer threads
@@ -441,18 +425,15 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "Failed to create Reducer thread %d\n", i);
             exit(EXIT_FAILURE);
         }
-        // printf("Reducer thread %d created\n", i);
     }
 
     // Join all threads
     for (int i = 0; i < mapper_count; i++) {
         pthread_join(mapper_threads[i], NULL);
-        // printf("Mapper thread %d joined\n", i);
     }
 
     for (int i = 0; i < reducer_count; i++) {
         pthread_join(reducer_threads[i], NULL);
-        // printf("Reducer thread %d joined\n", i);
     }
 
     // Destroy the mutex and barrier
@@ -477,8 +458,6 @@ int main(int argc, char *argv[]) {
         free(file_list[i]);
     }
     free(file_list);
-
-    // printf("Program completed successfully.\n");
 
     return 0;
 }
